@@ -1,0 +1,39 @@
+{
+  "name": "logistics-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Logistics Core - delivery operations for the Grocery + Inventory estate.",
+  "scripts": {
+    "dev": "next dev --port 3200",
+    "build": "next build",
+    "start": "next start --port 3200",
+    "typecheck": "tsc --noEmit",
+    "db:up": "node scripts/db-up.mjs",
+    "db:down": "node scripts/db-down.mjs",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:reset": "node scripts/db-reset.mjs",
+    "db:verify": "node scripts/db-verify.mjs",
+    "admin:create": "tsx scripts/admin-create.mjs",
+    "key:mint": "node scripts/key-mint.mjs",
+    "locations:sync": "tsx scripts/locations-sync.mjs",
+    "test": "tsx --test --test-concurrency=1 \"tests/*.test.mjs\"",
+    "check": "npm run db:reset && npm test",
+    "demo:order": "tsx scripts/demo-order.mjs",
+    "expire:assignments": "node scripts/expire-assignments.mjs",
+    "outbound:drain": "tsx scripts/outbound-drain.mjs"
+  },
+  "dependencies": {
+    "next": "^16.3.3",
+    "pg": "^8.13.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^19.2.18",
+    "typescript": "^5.7.2",
+    "tsx": "^4.19.2"
+  }
+}
