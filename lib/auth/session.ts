@@ -1,4 +1,5 @@
 import { randomBytes, createHash } from "node:crypto";
+import { envNumber } from "../env";
 
 /**
  * Session cookies.
@@ -10,11 +11,19 @@ import { randomBytes, createHash } from "node:crypto";
 
 export const COOKIE_NAME = "lg_session";
 
-/** Staff sign in for a working day; riders for a working week. */
+/**
+ * Staff sign in for a working day; riders for a working week.
+ *
+ * Through envNumber, because a blank SESSION_TTL_STAFF_SECONDS in a
+ * hosting dashboard used to become 0 — and a cookie with Max-Age=0
+ * expires the instant it is set. Sign-in returned 200 with a valid
+ * session, and then every page said "you are not signed in", which is
+ * about as far from the cause as a symptom can get.
+ */
 export function ttlSeconds(role: string): number {
   return role === "rider"
-    ? Number(process.env.SESSION_TTL_RIDER_SECONDS ?? 60 * 60 * 24 * 7)
-    : Number(process.env.SESSION_TTL_STAFF_SECONDS ?? 60 * 60 * 12);
+    ? envNumber("SESSION_TTL_RIDER_SECONDS", 60 * 60 * 24 * 7)
+    : envNumber("SESSION_TTL_STAFF_SECONDS", 60 * 60 * 12);
 }
 
 export function newToken(): { token: string; hash: string } {

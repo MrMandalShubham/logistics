@@ -1,4 +1,5 @@
 import pg from "pg";
+import { envNumber, envString } from "./env";
 
 /**
  * One pool for the process.
@@ -10,7 +11,7 @@ import pg from "pg";
 const globalForPg = globalThis as unknown as { _logisticsPool?: pg.Pool };
 
 function connectionString(): string {
-  const url = process.env.DATABASE_URL;
+  const url = envString("DATABASE_URL");
   if (!url) {
     // Fail loudly at first use rather than falling back to a
     // placeholder. A system that starts fine and fails on the first
@@ -82,14 +83,14 @@ function createPool(): pg.Pool {
   const p = new pg.Pool({
     connectionString: url,
     ssl: sslFor(url),
-    max: Number(process.env.PG_POOL_MAX ?? 8),
+    max: envNumber("PG_POOL_MAX", 8),
     idleTimeoutMillis: 30_000,
     // 10s was fine for a container on this machine and is not enough
     // for a managed database across a slow link — Supabase's direct
     // (IPv6-only) host took 22s to establish from here. Keep it well
     // under the platform's function timeout, or a slow connect
     // arrives as an opaque platform error instead of a database one.
-    connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS ?? 30_000),
+    connectionTimeoutMillis: envNumber("PG_CONNECT_TIMEOUT_MS", 30_000),
   });
 
   // A pool that has ever had an idle client dropped emits 'error' on

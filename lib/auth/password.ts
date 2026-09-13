@@ -1,5 +1,6 @@
 import { scrypt, randomBytes, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
+import { envNumber } from "../env";
 
 const scryptAsync = promisify(scrypt) as (
   password: string | Buffer,
@@ -24,21 +25,6 @@ const scryptAsync = promisify(scrypt) as (
 
 const KEYLEN = 64;
 const MAXMEM = 256 * 1024 * 1024;
-
-/**
- * Read a numeric setting, treating an empty value as absent.
- *
- * `process.env.X ?? default` does NOT fall back for an empty string,
- * and `Number("")` is 0 — so a variable that exists in a dashboard
- * with nothing typed into it silently becomes zero. That is how the
- * cost floor below came to reject a perfectly normal deployment.
- */
-function envNumber(name: string, fallback: number): number {
-  const raw = process.env[name];
-  if (raw === undefined || raw.trim() === "") return fallback;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : fallback;
-}
 
 /**
  * The cost parameters, resolved on FIRST USE.
