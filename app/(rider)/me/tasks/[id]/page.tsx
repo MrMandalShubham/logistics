@@ -82,6 +82,8 @@ export default async function TaskPage({
   const step = RIDER_STEP[d.status as DeliveryStatus] ?? null;
   const canComplete = d.status === "ARRIVED";
   const isDone = ["DELIVERED", "RETURNED", "CANCELLED"].includes(d.status);
+  // The job has turned around: the destination is now the shop.
+  const returning = ["RETURN_REQUIRED", "RETURN_IN_TRANSIT"].includes(d.status);
 
   return (
     <main style={S.page}>
@@ -90,7 +92,17 @@ export default async function TaskPage({
       <h1 style={S.h1}>{d.tracking_id}</h1>
       <div style={S.status}>{LABELS[d.status] ?? d.status}</div>
 
-      {a && (
+      {returning && (
+        <section style={S.returning}>
+          <div style={S.label}>Take it back</div>
+          <p style={S.returningText}>
+            This one is going back to <strong>{d.pickup_location_code}</strong>.
+            Do not attempt the address below — dispatch has already told the customer.
+          </p>
+        </section>
+      )}
+
+      {a && !returning && (
         <section style={S.block}>
           <div style={S.label}>Deliver to</div>
           <div style={S.address}>
@@ -116,7 +128,11 @@ export default async function TaskPage({
       )}
 
       <section style={S.block}>
-        <div style={S.label}>Collect from {d.pickup_location_code}</div>
+        <div style={S.label}>
+          {returning
+            ? `Hand back at ${d.pickup_location_code}`
+            : `Collect from ${d.pickup_location_code}`}
+        </div>
         <ul style={S.items}>
           {items.map((i: Record<string, unknown>) => (
             <li key={String(i.sku)} style={S.item}>
@@ -182,5 +198,8 @@ const S: Record<string, React.CSSProperties> = {
   hint: { color: "#888", fontSize: 13, marginTop: 10 },
   done: { background: "#e8f5ec", border: "1px solid #b7e0c4", borderRadius: 12,
           padding: 16, textAlign: "center", fontWeight: 600, color: "#1a7f37" },
+  returning: { padding: 16, border: "1px solid #ffd699", background: "#fff8ec",
+               borderRadius: 14, marginBottom: 14 },
+  returningText: { fontSize: 16, lineHeight: 1.5, margin: "4px 0 0" },
   failLink: { marginTop: 28, fontSize: 13, color: "#777" },
 };

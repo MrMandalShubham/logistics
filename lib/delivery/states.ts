@@ -63,6 +63,12 @@ export const RIDER_STEP: Partial<Record<DeliveryStatus, { to: DeliveryStatus; la
   PICKUP_PENDING:   { to: "PICKED_UP",        label: "I have the parcel" },
   PICKED_UP:        { to: "OUT_FOR_DELIVERY", label: "On my way" },
   OUT_FOR_DELIVERY: { to: "ARRIVED",          label: "I have arrived" },
+
+  // The way back (Phase 6). A dispatcher decides that a failed
+  // delivery goes back to the shop; the rider is the one carrying it,
+  // so they walk these two the same way they walked the others.
+  RETURN_REQUIRED:   { to: "RETURN_IN_TRANSIT", label: "Taking it back" },
+  RETURN_IN_TRANSIT: { to: "RETURNED",          label: "Handed it back" },
 };
 
 /** Location is recorded only while a parcel is actually being carried. */

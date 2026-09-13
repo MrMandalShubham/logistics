@@ -151,7 +151,11 @@ export default function TaskActions({
         <p style={S.hint}>Waiting on dispatch.</p>
       )}
 
-      {!["DELIVERED", "RETURNED", "CANCELLED"].includes(status) && (
+      {/* No failure buttons on the way back. A return cannot fail —
+          the rider is walking to the shop they collected it from, and
+          offering "nobody answered" there would be nonsense. */}
+      {!["DELIVERED", "RETURNED", "CANCELLED",
+         "RETURN_REQUIRED", "RETURN_IN_TRANSIT"].includes(status) && (
         <details style={S.details}>
           <summary style={S.summary}>Something went wrong</summary>
           <div style={S.reasons}>

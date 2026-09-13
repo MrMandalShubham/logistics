@@ -174,9 +174,84 @@ async function pushStatusToGrocery(job: Job): Promise<Outcome> {
   }
 }
 
+/**
+ * Give the stock back — and then CHECK, for the same reason.
+ *
+ * ── What "success" has to mean here ──
+ *
+ *   released   the goods are available again. Done.
+ *   404        nothing was ever reserved, so nothing is held. Also
+ *              done — getOrderHold maps this to "released", and a
+ *              hold that lapsed on its own is the ordinary case
+ *              while Q4 keeps holds unconfirmable.
+ *   delivered  the stock was CONSUMED. A release cannot undo a
+ *              ledger entry, and this delivery says the parcel came
+ *              back. One of those two facts is wrong and no retry
+ *              will decide which.
+ *
+ * The last one is the mirror of INVENTORY_HOLD_LOST, and just as
+ * fatal: a parcel physically on a shelf that the ledger has sold is a
+ * discrepancy somebody has to count.
+ */
+async function releaseToInventory(job: Job): Promise<Outcome> {
+  const orderId = String(job.payload.order_id ?? "");
+  if (!orderId) return { ok: false, error: "no order_id in payload", fatal: true };
+
+  try {
+    const res = await post("/api/inventory/release", {
+      order_id: orderId,
+      reason: String(job.payload.reason ?? "returned"),
+    });
+
+    // A 404 from release means Inventory has no hold for this order —
+    // which is the outcome we wanted, not a failure.
+    if (!res.ok && res.status !== 404) {
+      const fatal = res.status >= 400 && res.status < 500 && res.status !== 429;
+      return {
+        ok: false,
+        error: `release returned ${res.status}: ${JSON.stringify(res.body)}`,
+        response: res.body,
+        fatal,
+      };
+    }
+
+    // ── the verification ──
+    const hold = await getOrderHold(orderId);
+
+    if (hold.status === "released") {
+      return { ok: true, response: { release: res.body, verified_status: hold.status } };
+    }
+
+    if (hold.status === "delivered") {
+      return {
+        ok: false,
+        fatal: true,
+        error:
+          `INVENTORY_RELEASE_UNVERIFIED: ${orderId} came back, but Inventory reports the ` +
+          "stock as consumed. A release cannot undo a ledger entry — a person must " +
+          "reconcile the shelf against the ledger.",
+        response: { release: res.body, verified_status: hold.status },
+      };
+    }
+
+    // Still 'held', or Inventory could not be reached for the check.
+    return {
+      ok: false,
+      error: `release not verified: inventory reports "${hold.status}"`,
+      response: { release: res.body, verified_status: hold.status },
+    };
+  } catch (e) {
+    const err = e as { message?: string };
+    return { ok: false, error: err?.message ?? String(e) };
+  }
+}
+
 async function deliverOne(job: Job): Promise<Outcome> {
   if (job.target === "INVENTORY" && job.event === "inventory.commit") {
     return commitToInventory(job);
+  }
+  if (job.target === "INVENTORY" && job.event === "inventory.release") {
+    return releaseToInventory(job);
   }
   if (job.target === "GROCERY" && job.event === "delivery.status_changed") {
     return pushStatusToGrocery(job);
@@ -242,16 +317,43 @@ export async function drainOnce(
           delivery_id: job.delivery_id, order: job.payload.order_id,
         });
       }
+
+      if (job.delivery_id && job.event === "inventory.release") {
+        await db.query("select delivery.record_release_result($1,'verified',null,null)",
+          [job.delivery_id]);
+
+        logger.info("release verified", {
+          delivery_id: job.delivery_id, order: job.payload.order_id,
+        });
+      }
     } else if (state.s === "DEAD") {
       out.dead += 1;
 
-      // A dead commit is a stock discrepancy, not a queue statistic.
-      if (job.delivery_id) {
+      // ── Which kind of dead this is ──
+      //
+      // Branching on the EVENT, not merely on having a delivery_id.
+      // Before Phase 5 every queued job was a commit, so any dead job
+      // with a delivery was a stock discrepancy. It is not any more: a
+      // dead Grocery status would otherwise mark the delivery's commit
+      // failed and raise COMMIT_FAILED against a sale that went
+      // through perfectly well.
+      if (job.delivery_id && job.event === "inventory.commit") {
         await db.query(
           "select delivery.record_commit_result($1,'failed',null,$2,$3)",
           [job.delivery_id,
            outcome.error?.startsWith("INVENTORY_HOLD_LOST")
              ? "INVENTORY_HOLD_LOST" : "COMMIT_FAILED",
+           outcome.error ?? null]);
+      }
+
+      // A parcel came back and Inventory was never told. The stock is
+      // on a shelf and the ledger does not know it.
+      if (job.delivery_id && job.event === "inventory.release") {
+        await db.query(
+          "select delivery.record_release_result($1,'failed',$2,$3)",
+          [job.delivery_id,
+           outcome.error?.startsWith("INVENTORY_RELEASE_UNVERIFIED")
+             ? "INVENTORY_RELEASE_UNVERIFIED" : "RELEASE_FAILED",
            outcome.error ?? null]);
       }
 
