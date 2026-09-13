@@ -15,4 +15,4 @@
  * when the two disagree. Bumping it is still manual; forgetting to is
  * no longer silent.
  */
-export const EXPECTED_MIGRATIONS = 13;
+export const EXPECTED_MIGRATIONS = 14;

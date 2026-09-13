@@ -119,6 +119,14 @@ try {
        values ('__VERIFY__','Verification probe','VIRTUAL','SEED')
        on conflict (code) do nothing`);
 
+    // 0014 gates delivery creation on being a logistics actor, and
+    // this script connects as the owner with no claims at all — which
+    // reads as `anon` and is refused, correctly. Say who we are.
+    await client.query(
+      `select set_config('request.jwt.claims', $1, false)`,
+      [JSON.stringify({ sub: null, role: "system", actor_kind: "SYSTEM",
+                        location_codes: [], permissions: ["*"] })]);
+
     const { rows: [d] } = await client.query(
       `insert into delivery.delivery (external_order_id, tracking_id,
                                       pickup_location_code)
