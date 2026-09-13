@@ -7,3 +7,7 @@ build/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+# Backups of env files are still env files.
+.env*.bak
+*.env.bak

@@ -55,31 +55,74 @@ function sslFor(url: string): pg.PoolConfig["ssl"] {
   return local ? undefined : { rejectUnauthorized: false };
 }
 
-const CONNECTION = connectionString();
+/**
+ * The pool, created on FIRST USE rather than on import.
+ *
+ * ── Why this is lazy ──
+ *
+ * It used to be built at module scope, which meant importing this
+ * file needed DATABASE_URL — and `next build` imports every route to
+ * collect page data. So the build failed on any host that supplies
+ * environment variables at runtime rather than at build time:
+ *
+ *     Failed to collect page data for /api/health
+ *     DATABASE_URL is not set.
+ *
+ * The comment above connectionString() says "fail loudly at first
+ * use". It did not: it failed at first IMPORT, which is a different
+ * moment and the wrong one. A build should never need a database.
+ *
+ * The Proxy keeps the export shape — `pool.connect()`, `pool.query()`,
+ * `pool.totalCount` all still work — so nothing else had to change.
+ */
+let realPool: pg.Pool | undefined;
 
-export const pool: pg.Pool =
-  globalForPg._logisticsPool ??
-  new pg.Pool({
-    connectionString: CONNECTION,
-    ssl: sslFor(CONNECTION),
+function createPool(): pg.Pool {
+  const url = connectionString();
+  const p = new pg.Pool({
+    connectionString: url,
+    ssl: sslFor(url),
     max: Number(process.env.PG_POOL_MAX ?? 8),
     idleTimeoutMillis: 30_000,
     // 10s was fine for a container on this machine and is not enough
     // for a managed database across a slow link — Supabase's direct
-    // (IPv6-only) host took 22s to establish from here. Configurable
-    // because the right number is a property of the network, not of
-    // this code.
+    // (IPv6-only) host took 22s to establish from here. Keep it well
+    // under the platform's function timeout, or a slow connect
+    // arrives as an opaque platform error instead of a database one.
     connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS ?? 30_000),
   });
 
-// A pool that has ever had an idle client dropped emits 'error' on
-// the pool itself; with no handler Node treats it as unhandled and
-// takes the process down.
-pool.on("error", (e) => {
-  console.error(JSON.stringify({ level: "error", msg: "pg pool error", err: e.message }));
-});
+  // A pool that has ever had an idle client dropped emits 'error' on
+  // the pool itself; with no handler Node treats it as unhandled and
+  // takes the process down.
+  p.on("error", (e) => {
+    console.error(JSON.stringify({ level: "error", msg: "pg pool error", err: e.message }));
+  });
 
-if (process.env.NODE_ENV !== "production") globalForPg._logisticsPool = pool;
+  return p;
+}
+
+function getPool(): pg.Pool {
+  if (globalForPg._logisticsPool) return globalForPg._logisticsPool;
+  if (!realPool) {
+    realPool = createPool();
+    // Next.js reloads modules in development, so the pool is parked on
+    // globalThis. Without that, every hot reload leaks a pool and the
+    // database runs out of connections after about twenty edits.
+    if (process.env.NODE_ENV !== "production") globalForPg._logisticsPool = realPool;
+  }
+  return realPool;
+}
+
+export const pool: pg.Pool = new Proxy({} as pg.Pool, {
+  get(_t, prop, receiver) {
+    const value = Reflect.get(getPool(), prop, receiver);
+    return typeof value === "function" ? value.bind(getPool()) : value;
+  },
+  set(_t, prop, value) {
+    return Reflect.set(getPool(), prop, value);
+  },
+});
 
 export type Claims = Record<string, unknown>;
 
