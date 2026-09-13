@@ -24,7 +24,9 @@
     "outbound:drain": "tsx scripts/outbound-drain.mjs",
     "live:phase5": "tsx --env-file=.env scripts/live-phase5.mjs",
     "grocery:stub": "node scripts/grocery-stub.mjs",
-    "live:phase6": "tsx --env-file=.env scripts/live-phase6.mjs"
+    "live:phase6": "tsx --env-file=.env scripts/live-phase6.mjs",
+    "worker": "tsx --env-file=.env scripts/worker.mjs",
+    "retention": "tsx --env-file=.env scripts/retention.mjs"
   },
   "dependencies": {
     "next": "^16.3.3",

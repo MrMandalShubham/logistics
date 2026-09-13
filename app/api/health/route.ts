@@ -4,11 +4,10 @@ import { COOKIE_NAME, hashToken } from "@/lib/auth/session";
 import * as inventory from "@/lib/inventory";
 import * as grocery from "@/lib/grocery";
 import { correlationId } from "@/lib/logging";
+import { EXPECTED_MIGRATIONS } from "@/lib/migrations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const EXPECTED_MIGRATIONS = 9;
 
 /**
  * GET /api/health          liveness  -- is the process up?
@@ -69,6 +68,36 @@ export async function GET(req: NextRequest) {
       // debug "invalid signature" blind later.
       const { rows: t } = await c.query("select now() as db_now");
       checks.clock_skew_ms = Math.abs(Date.now() - new Date(t[0].db_now).getTime());
+
+      // ── Is the scheduler alive? ──
+      //
+      // The check this endpoint most needed and did not have. A
+      // worker that silently stops leaves everything here green
+      // while the customer's order page freezes on "packed" and
+      // Inventory's ledger stays silent — nothing FAILS, so nothing
+      // shows. An overdue job is a failure, and it says which.
+      const { rows: jobs } = await c.query("select * from ops.job_health()");
+      const overdue = jobs.filter((j) => j.overdue);
+
+      checks.jobs = {
+        ok: overdue.length === 0,
+        overdue: overdue.map((j) => ({
+          job: j.job,
+          last_success: j.last_success,
+          seconds_since: j.seconds_since,
+          allowed: j.stale_after_seconds,
+          last_error: j.last_outcome === false ? j.last_detail : undefined,
+        })),
+        scheduled: jobs.length,
+        detail: overdue.length === 0
+          ? "every scheduled job has succeeded within its window"
+          : overdue.map((j) => j.seconds_since === null
+              ? `${j.job} has never succeeded`
+              : `${j.job} has not succeeded for ${j.seconds_since}s ` +
+                `(allowed ${j.stale_after_seconds}s)`).join("; "),
+      };
+
+      if (overdue.length > 0) ok = false;
     } finally {
       c.release();
     }
