@@ -5,6 +5,7 @@ import {
   resolveException, resolveConflict, resolveDisputedProof,
   rescheduleDelivery, requireReturn, type ActionResult,
 } from "@/app/actions/exceptions";
+import { neutral, semantic } from "@/lib/ui/theme";
 
 /**
  * The buttons that close an exception.
@@ -126,13 +127,13 @@ const S: Record<string, React.CSSProperties> = {
   note: { width: "100%", padding: 10, fontSize: 14, border: "1px solid #ddd",
           borderRadius: 10, boxSizing: "border-box", fontFamily: "inherit", resize: "vertical" },
   row: { display: "flex", gap: 8, flexWrap: "wrap" },
-  primary: { padding: "9px 16px", background: "#0b5fff", color: "white", border: 0,
+  primary: { padding: "9px 16px", background: semantic.accent, color: "white", border: 0,
              borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" },
-  plain: { padding: "9px 16px", background: "#f2f2f2", color: "#444", border: 0,
+  plain: { padding: "9px 16px", background: neutral[100], color: neutral[700], border: 0,
            borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" },
-  danger: { padding: "9px 16px", background: "#8a1c10", color: "white", border: 0,
+  danger: { padding: "9px 16px", background: semantic.danger, color: "white", border: 0,
             borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" },
-  hint: { color: "#999", fontSize: 12, margin: 0 },
-  ok: { color: "#1a7f37", margin: "4px 0 0" },
-  bad: { color: "#8a1c10", margin: "4px 0 0" },
+  hint: { color: neutral[400], fontSize: 12, margin: 0 },
+  ok: { color: semantic.success, margin: "4px 0 0" },
+  bad: { color: semantic.danger, margin: "4px 0 0" },
 };

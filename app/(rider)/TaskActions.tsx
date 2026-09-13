@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createEvent, planSync, applyResults, isAwaitingSync,
          type OutboxEvent, type SyncResult } from "@/lib/offline/outbox";
 import * as store from "@/lib/offline/store";
+import { neutral, semantic } from "@/lib/ui/theme";
 
 /**
  * The buttons a rider actually presses.
@@ -184,23 +185,23 @@ export default function TaskActions({
 }
 
 const S: Record<string, React.CSSProperties> = {
-  block: { padding: 16, border: "1px solid #e5e5e5", borderRadius: 14, background: "#fff" },
+  block: { padding: 16, border: "1px solid #e5e5e5", borderRadius: 14, background: neutral[0] },
   label: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6,
-           color: "#888", marginBottom: 8 },
+           color: neutral[500], marginBottom: 8 },
   otp: { width: "100%", padding: 16, fontSize: 26, letterSpacing: 8,
          textAlign: "center", border: "2px solid #ddd", borderRadius: 12,
          boxSizing: "border-box" },
-  primary: { width: "100%", padding: 18, background: "#0b5fff", color: "white",
+  primary: { width: "100%", padding: 18, background: semantic.accent, color: "white",
              border: 0, borderRadius: 14, fontSize: 18, fontWeight: 700,
              cursor: "pointer", marginTop: 10 },
-  waiting: { padding: 16, background: "#fff4d6", color: "#7a5200",
+  waiting: { padding: 16, background: semantic.attentionSoft, color: semantic.attention,
              borderRadius: 14, textAlign: "center" },
-  message: { padding: "12px 14px", background: "#eef3ff", color: "#0b3aa8",
+  message: { padding: "12px 14px", background: semantic.accentSoft, color: semantic.accent,
              borderRadius: 12, marginBottom: 12, fontSize: 14 },
-  hint: { color: "#888", fontSize: 13, marginTop: 10 },
+  hint: { color: neutral[500], fontSize: 13, marginTop: 10 },
   details: { marginTop: 28 },
-  summary: { color: "#b35900", fontSize: 14, cursor: "pointer" },
+  summary: { color: semantic.attention, fontSize: 14, cursor: "pointer" },
   reasons: { display: "flex", flexDirection: "column", gap: 8, marginTop: 12 },
-  reason: { padding: 14, background: "#fff", border: "1px solid #ffd699",
+  reason: { padding: 14, background: neutral[0], border: "1px solid #ffd699",
             borderRadius: 12, fontSize: 15, cursor: "pointer", textAlign: "left" },
 };

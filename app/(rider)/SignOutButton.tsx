@@ -4,6 +4,7 @@ import { useState } from "react";
 import { planSignOut, planSync, applyResults,
          type OutboxEvent, type SyncResult } from "@/lib/offline/outbox";
 import * as store from "@/lib/offline/store";
+import { neutral, semantic } from "@/lib/ui/theme";
 
 /**
  * Sign out, and take the customers' addresses with you.
@@ -99,10 +100,10 @@ export default function SignOutButton() {
 
 const S: Record<string, React.CSSProperties> = {
   wrap: { marginTop: 32, display: "flex", flexDirection: "column", gap: 10 },
-  plain: { padding: 14, background: "#f5f5f5", color: "#555", border: 0,
+  plain: { padding: 14, background: neutral[100], color: neutral[700], border: 0,
            borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: "pointer" },
-  danger: { padding: 14, background: "#8a1c10", color: "white", border: 0,
+  danger: { padding: 14, background: semantic.danger, color: "white", border: 0,
             borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer" },
-  warning: { background: "#ffe9e6", color: "#8a1c10", border: "1px solid #f5b5ad",
+  warning: { background: semantic.dangerSoft, color: semantic.danger, border: "1px solid #f5b5ad",
              borderRadius: 12, padding: "12px 14px", fontSize: 14, margin: 0 },
 };

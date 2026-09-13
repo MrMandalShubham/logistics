@@ -1,4 +1,5 @@
 import SignInForm from "./SignInForm";
+import { neutral } from "@/lib/ui/theme";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,7 @@ const S: Record<string, React.CSSProperties> = {
   page: { maxWidth: 380, margin: "72px auto", padding: "0 24px",
           fontSize: 14, lineHeight: 1.6 },
   h1: { fontSize: 26, margin: "0 0 2px" },
-  sub: { color: "#666", margin: "0 0 24px" },
-  foot: { marginTop: 28, color: "#888", fontSize: 12 },
-  code: { background: "#f2f2f2", padding: "1px 5px", borderRadius: 4 },
+  sub: { color: neutral[500], margin: "0 0 24px" },
+  foot: { marginTop: 28, color: neutral[500], fontSize: 12 },
+  code: { background: neutral[100], padding: "1px 5px", borderRadius: 4 },
 };

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { setLocationGeo, type LocationResult } from "@/app/actions/locations";
+import { neutral, semantic } from "@/lib/ui/theme";
 
 /**
  * Three boxes and a button.
@@ -54,11 +55,11 @@ const S: Record<string, React.CSSProperties> = {
   form: { display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap",
           marginTop: 12 },
   field: { display: "flex", flexDirection: "column", gap: 4 },
-  label: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: "#888" },
+  label: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: neutral[500] },
   input: { padding: "8px 10px", fontSize: 14, border: "1px solid #ddd",
            borderRadius: 8, width: 130, fontFamily: "ui-monospace, monospace" },
-  button: { padding: "9px 18px", background: "#0b5fff", color: "white", border: 0,
+  button: { padding: "9px 18px", background: semantic.accent, color: "white", border: 0,
             borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" },
-  ok: { color: "#1a7f37", margin: "4px 0 0", flexBasis: "100%" },
-  bad: { color: "#8a1c10", margin: "4px 0 0", flexBasis: "100%" },
+  ok: { color: semantic.success, margin: "4px 0 0", flexBasis: "100%" },
+  bad: { color: semantic.danger, margin: "4px 0 0", flexBasis: "100%" },
 };

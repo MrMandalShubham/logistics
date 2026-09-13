@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { neutral, semantic } from "@/lib/ui/theme";
 
 export const dynamic = "force-dynamic";
 
@@ -103,15 +104,15 @@ const S: Record<string, React.CSSProperties> = {
   page: { maxWidth: 380, margin: "72px auto", padding: "0 24px",
           fontSize: 14, lineHeight: 1.6 },
   h1: { fontSize: 24, margin: "0 0 2px" },
-  sub: { color: "#666", margin: "0 0 24px" },
+  sub: { color: neutral[500], margin: "0 0 24px" },
   form: { display: "flex", flexDirection: "column", gap: 14 },
   field: { display: "flex", flexDirection: "column", gap: 5 },
-  label: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6, color: "#888" },
+  label: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6, color: neutral[500] },
   input: { padding: "11px 12px", fontSize: 15, border: "1px solid #ddd",
            borderRadius: 10, boxSizing: "border-box" },
-  button: { padding: 13, background: "#0b5fff", color: "white", border: 0,
+  button: { padding: 13, background: semantic.accent, color: "white", border: 0,
             borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: "pointer",
             marginTop: 4 },
-  error: { background: "#fff6f4", border: "1px solid #f5b5ad", color: "#8a1c10",
+  error: { background: semantic.dangerSoft, border: "1px solid #f5b5ad", color: semantic.danger,
            borderRadius: 10, padding: "10px 12px", margin: 0, fontSize: 13 },
 };

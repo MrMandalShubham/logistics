@@ -4,6 +4,8 @@ import { pool } from "@/lib/db";
 import { COOKIE_NAME, hashToken } from "@/lib/auth/session";
 import { LABELS, RIDER_STEP, type DeliveryStatus } from "@/lib/delivery/states";
 import TaskActions from "@/app/(rider)/TaskActions";
+import { rider } from "@/lib/ui/rider";
+import { neutral, semantic, radius } from "@/lib/ui/theme";
 
 export const dynamic = "force-dynamic";
 
@@ -166,40 +168,36 @@ export default async function TaskPage({
 }
 
 const S: Record<string, React.CSSProperties> = {
-  page: { maxWidth: 560, margin: "0 auto", padding: "16px 16px 80px",
-          fontSize: 16, lineHeight: 1.5 },
-  back: { color: "#0b5fff", textDecoration: "none", fontSize: 15 },
-  h1: { fontSize: 26, margin: "12px 0 2px" },
-  status: { color: "#0b5fff", fontWeight: 700, fontSize: 15, marginBottom: 20 },
-  block: { padding: 16, border: "1px solid #e5e5e5", borderRadius: 14,
-           marginBottom: 14, background: "#fff" },
-  label: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6,
-           color: "#888", marginBottom: 8 },
-  address: { fontSize: 17, lineHeight: 1.6 },
-  instructions: { background: "#fffbe6", border: "1px solid #ffe58f",
-                  borderRadius: 8, padding: "8px 12px", fontSize: 14, marginTop: 10 },
+  page: rider.page,
+  back: { color: semantic.accent, textDecoration: "none", fontSize: 15, fontWeight: 600,
+          display: "inline-block", minHeight: 44, lineHeight: "44px" },
+  h1: { fontSize: 26, fontWeight: 700, color: neutral[900], margin: "4px 0 2px" },
+  status: { color: semantic.accent, fontWeight: 700, fontSize: 15, marginBottom: 20 },
+
+  block: rider.block,
+  label: rider.label,
+  address: rider.address,
+
+  // Door instructions are the one thing a rider must not skim past.
+  instructions: { background: semantic.attentionSoft,
+                  border: `1px solid ${semantic.attentionEdge}`,
+                  borderRadius: radius.md, padding: "10px 13px",
+                  fontSize: 14.5, marginTop: 12, color: neutral[900] },
+
   row: { display: "flex", gap: 10, marginTop: 14 },
   items: { listStyle: "none", padding: 0, margin: 0 },
-  item: { padding: "6px 0", borderBottom: "1px solid #f0f0f0" },
-  collect: { marginTop: 12, fontWeight: 700, color: "#b35900" },
-  // One obvious action, impossible to miss with a thumb.
-  primary: { width: "100%", padding: "18px", background: "#0b5fff", color: "white",
-             border: 0, borderRadius: 14, fontSize: 18, fontWeight: 700,
-             cursor: "pointer", marginTop: 8 },
-  secondary: { flex: 1, padding: "14px", background: "#eef3ff", color: "#0b5fff",
-               border: 0, borderRadius: 12, fontSize: 15, fontWeight: 600,
-               textAlign: "center", textDecoration: "none" },
-  secondaryMuted: { flex: 1, padding: "14px", background: "#f5f5f5", color: "#555",
-                    border: 0, borderRadius: 12, fontSize: 15, fontWeight: 600,
-                    textAlign: "center", textDecoration: "none" },
-  otp: { width: "100%", padding: "16px", fontSize: 26, letterSpacing: 8,
-         textAlign: "center", border: "2px solid #ddd", borderRadius: 12,
-         boxSizing: "border-box" },
-  hint: { color: "#888", fontSize: 13, marginTop: 10 },
-  done: { background: "#e8f5ec", border: "1px solid #b7e0c4", borderRadius: 12,
-          padding: 16, textAlign: "center", fontWeight: 600, color: "#1a7f37" },
-  returning: { padding: 16, border: "1px solid #ffd699", background: "#fff8ec",
-               borderRadius: 14, marginBottom: 14 },
-  returningText: { fontSize: 16, lineHeight: 1.5, margin: "4px 0 0" },
-  failLink: { marginTop: 28, fontSize: 13, color: "#777" },
+  item: { padding: "9px 0", borderBottom: `1px solid ${neutral[100]}`, fontSize: 16 },
+  collect: { marginTop: 14, fontWeight: 700, fontSize: 17, color: semantic.attention },
+
+  secondary: rider.secondary,
+  secondaryMuted: rider.quiet,
+
+  done: { background: semantic.successSoft, border: `1px solid ${semantic.successEdge}`,
+          borderRadius: radius.lg, padding: 18, textAlign: "center",
+          fontWeight: 700, fontSize: 16, color: semantic.success },
+
+  returning: { padding: 16, border: `1px solid ${semantic.attentionEdge}`,
+               background: semantic.attentionSoft, borderRadius: radius.lg,
+               marginBottom: 14 },
+  returningText: { fontSize: 16.5, lineHeight: 1.5, margin: "4px 0 0", color: neutral[900] },
 };

@@ -1,4 +1,5 @@
-/**
+
+import { neutral, semantic } from "@/lib/ui/theme";/**
  * What the service worker serves when a page is not cached and there
  * is no signal.
  *
@@ -23,8 +24,8 @@ const S: Record<string, React.CSSProperties> = {
   page: { maxWidth: 480, margin: "60px auto", padding: "0 24px",
           textAlign: "center", lineHeight: 1.6 },
   h1: { fontSize: 26 },
-  p: { color: "#555" },
+  p: { color: neutral[700] },
   button: { display: "inline-block", marginTop: 20, padding: "14px 28px",
-            background: "#0b5fff", color: "white", borderRadius: 12,
+            background: semantic.accent, color: "white", borderRadius: 12,
             textDecoration: "none", fontWeight: 700 },
 };

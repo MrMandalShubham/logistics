@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { applyResults, planSync, type OutboxEvent, type SyncResult } from "@/lib/offline/outbox";
 import * as store from "@/lib/offline/store";
+import { neutral, semantic } from "@/lib/ui/theme";
 
 /**
  * The one client component in the rider app.
@@ -137,16 +138,16 @@ export default function OfflineBar() {
 }
 
 const S: Record<string, React.CSSProperties> = {
-  offline: { background: "#3a3a3a", color: "white", padding: "10px 16px",
+  offline: { background: neutral[900], color: "white", padding: "10px 16px",
              fontSize: 14, textAlign: "center" },
-  pending: { background: "#fff4d6", color: "#7a5200", padding: "10px 16px",
+  pending: { background: semantic.attentionSoft, color: semantic.attention, padding: "10px 16px",
              fontSize: 14, textAlign: "center", display: "flex",
              gap: 12, justifyContent: "center", alignItems: "center" },
-  conflict: { background: "#ffe9e6", color: "#8a1c10", padding: "14px 16px",
+  conflict: { background: semantic.dangerSoft, color: semantic.danger, padding: "14px 16px",
               fontSize: 14, borderBottom: "2px solid #f5b5ad" },
   list: { margin: "8px 0 10px", paddingLeft: 20 },
   now: { padding: "5px 12px", border: "1px solid #d4a017", background: "white",
          borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" },
-  dismiss: { padding: "6px 14px", border: 0, background: "#8a1c10", color: "white",
+  dismiss: { padding: "6px 14px", border: 0, background: semantic.danger, color: "white",
              borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" },
 };

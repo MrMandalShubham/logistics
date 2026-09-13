@@ -5,6 +5,7 @@ import { COOKIE_NAME, hashToken } from "@/lib/auth/session";
 import { LABELS, allowedNext } from "@/lib/delivery/states";
 import { assignmentHistory, ridersForDispatch } from "@/lib/fleet/dispatch";
 import { assignDelivery, admitDelivery } from "@/app/actions/dispatch";
+import { neutral, semantic } from "@/lib/ui/theme";
 
 export const dynamic = "force-dynamic";
 
@@ -169,8 +170,8 @@ export default async function DeliveryDetail({
             <tr key={i.sku}>
               <td style={{ ...S.td, width: 60 }}>{i.quantity}×</td>
               <td style={S.td}>{i.name}</td>
-              <td style={{ ...S.td, color: "#666" }}>{i.sku}</td>
-              <td style={{ ...S.td, color: "#999", fontSize: 12 }}>
+              <td style={{ ...S.td, color: neutral[500] }}>{i.sku}</td>
+              <td style={{ ...S.td, color: neutral[400], fontSize: 12 }}>
                 {i.reservation_id ? "hold id known" : "no hold id (Q4)"}
               </td>
             </tr>
@@ -297,8 +298,8 @@ const S: Record<string, React.CSSProperties> = {
           padding: "10px 14px", fontSize: 14 },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
           gap: 16, margin: "20px 0" },
-  fieldLabel: { fontSize: 11, textTransform: "uppercase", color: "#888", letterSpacing: 0.5 },
-  h2: { fontSize: 15, textTransform: "uppercase", color: "#666", letterSpacing: 0.5,
+  fieldLabel: { fontSize: 11, textTransform: "uppercase", color: neutral[500], letterSpacing: 0.5 },
+  h2: { fontSize: 15, textTransform: "uppercase", color: neutral[500], letterSpacing: 0.5,
         marginTop: 32, borderBottom: "1px solid #eee", paddingBottom: 6 },
   addr: { fontStyle: "normal", lineHeight: 1.7 },
   table: { width: "100%", borderCollapse: "collapse", fontSize: 14 },
@@ -306,17 +307,17 @@ const S: Record<string, React.CSSProperties> = {
   timeline: { listStyle: "none", padding: 0, margin: 0 },
   event: { padding: "10px 0 10px 16px", borderLeft: "2px solid #dde",
            marginLeft: 4, fontSize: 14 },
-  when: { display: "block", fontSize: 12, color: "#999" },
-  note: { fontSize: 13, color: "#555", marginTop: 4 },
+  when: { display: "block", fontSize: 12, color: neutral[400] },
+  note: { fontSize: 13, color: neutral[700], marginTop: 4 },
   actionRow: { display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" },
   form: { display: "flex", gap: 6, alignItems: "center" },
   select: { padding: "5px 8px", border: "1px solid #ccc", borderRadius: 6, fontSize: 13 },
-  button: { padding: "6px 14px", background: "#0b5fff", color: "white", border: 0,
+  button: { padding: "6px 14px", background: semantic.accent, color: "white", border: 0,
             borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer" },
   th: { textAlign: "left", padding: "6px 8px", borderBottom: "2px solid #ddd",
-        fontSize: 11, textTransform: "uppercase", color: "#666", letterSpacing: 0.4 },
-  pending: { color: "#b35900", fontWeight: 600 },
-  ok: { color: "#1a7f37", fontWeight: 600 },
-  muted: { color: "#666", fontSize: 13 },
-  link: { color: "#0b5fff", textDecoration: "none", fontSize: 14 },
+        fontSize: 11, textTransform: "uppercase", color: neutral[500], letterSpacing: 0.4 },
+  pending: { color: semantic.attention, fontWeight: 600 },
+  ok: { color: semantic.success, fontWeight: 600 },
+  muted: { color: neutral[500], fontSize: 13 },
+  link: { color: semantic.accent, textDecoration: "none", fontSize: 14 },
 };
