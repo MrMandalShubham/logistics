@@ -6,7 +6,7 @@
 // is replaced, never recovered.
 
 import pg from "pg";
-import { CONNECTION } from "./db-config.mjs";
+import { CONNECTION, PG } from "./db-config.mjs";
 
 const name = process.argv[2];
 const scopes = (process.argv[3] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -19,7 +19,7 @@ if (!name || scopes.length === 0) {
   process.exit(1);
 }
 
-const client = new pg.Client({ connectionString: CONNECTION });
+const client = new pg.Client({ ...PG });
 await client.connect();
 
 try {

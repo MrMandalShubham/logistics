@@ -32,7 +32,7 @@
 // behaviour a lock table would have to reimplement badly.
 
 import pg from "pg";
-import { CONNECTION } from "./db-config.mjs";
+import { CONNECTION, PG } from "./db-config.mjs";
 
 const args = process.argv.slice(2);
 const has = (f) => args.includes(f);
@@ -45,7 +45,7 @@ const WORKER = val("--name", `worker-${process.pid}`);
 const ONLY = val("--only");
 const ONCE = has("--once");
 
-const pool = new pg.Pool({ connectionString: CONNECTION, max: 6 });
+const pool = new pg.Pool({ ...PG, max: 6 });
 pool.on("error", () => {});
 
 const log = (msg, extra = {}) =>

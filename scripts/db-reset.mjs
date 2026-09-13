@@ -6,11 +6,11 @@
 
 import { execSync } from "node:child_process";
 import pg from "pg";
-import { CONNECTION, assertNotProduction, ROOT } from "./db-config.mjs";
+import { CONNECTION, assertNotProduction, ROOT, PG } from "./db-config.mjs";
 
 assertNotProduction("reset the database");
 
-const client = new pg.Client({ connectionString: CONNECTION });
+const client = new pg.Client({ ...PG });
 await client.connect();
 try {
   await client.query(`

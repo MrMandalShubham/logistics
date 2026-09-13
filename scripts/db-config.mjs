@@ -36,6 +36,26 @@ export const CONNECTION =
   process.env.DATABASE_URL ??
   "postgresql://postgres:postgres@127.0.0.1:55433/logistics_core";
 
+/**
+ * TLS for anything that is not on this machine.
+ *
+ * Managed Postgres presents a certificate signed by its own
+ * authority, which Node's trust store does not carry — so
+ * `?sslmode=require` connects and then dies with "self-signed
+ * certificate in certificate chain". Encrypted but unauthenticated
+ * is the standard posture for these providers; see lib/db.ts for
+ * what that costs and how to do it properly with a CA bundle.
+ *
+ * Every script spreads PG rather than passing CONNECTION directly,
+ * so there is one place this rule lives.
+ */
+export const SSL =
+  /@(localhost|127\.0\.0\.1|\[::1\]|host\.docker\.internal)[:/]/.test(CONNECTION)
+    ? undefined
+    : { rejectUnauthorized: false };
+
+export const PG = { connectionString: CONNECTION, ssl: SSL };
+
 export const MIGRATIONS_DIR = join(ROOT, "db", "migrations");
 
 /** Refuse to touch anything that looks like production. */

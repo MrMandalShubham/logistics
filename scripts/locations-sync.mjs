@@ -13,7 +13,7 @@
 // guess from a fact.
 
 import pg from "pg";
-import { CONNECTION } from "./db-config.mjs";
+import { CONNECTION, PG } from "./db-config.mjs";
 import { getLocations, isConfigured } from "../lib/inventory.ts";
 
 /**
@@ -83,7 +83,7 @@ if (isConfigured()) {
   console.log("  INVENTORY_API_URL / INVENTORY_API_KEY not set - seeding from fixture");
 }
 
-const client = new pg.Client({ connectionString: CONNECTION });
+const client = new pg.Client({ ...PG });
 await client.connect();
 
 try {

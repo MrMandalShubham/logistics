@@ -17,7 +17,7 @@
 
 import { randomBytes } from "node:crypto";
 import pg from "pg";
-import { CONNECTION } from "./db-config.mjs";
+import { CONNECTION, PG } from "./db-config.mjs";
 import { hashPassword } from "../lib/auth/password.ts";
 
 const email = (process.argv[2] ?? "").trim().toLowerCase();
@@ -32,7 +32,7 @@ if (!email || !email.includes("@")) {
 const temporary = randomBytes(24).toString("base64url");
 const hash = await hashPassword(temporary);
 
-const client = new pg.Client({ connectionString: CONNECTION });
+const client = new pg.Client({ ...PG });
 await client.connect();
 
 try {

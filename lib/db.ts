@@ -23,13 +23,53 @@ function connectionString(): string {
   return url;
 }
 
+/**
+ * TLS, for everything that is not on this machine.
+ *
+ * ── Why this is not left to the connection string ──
+ *
+ * `?sslmode=require` connects and then fails with "self-signed
+ * certificate in certificate chain": managed Postgres — Supabase,
+ * RDS, most others — presents a certificate signed by its own
+ * authority, which Node's default trust store does not carry. The
+ * failure is a TLS error rather than a connection error, so it is
+ * easy to misread as "SSL is not supported here" and disable it.
+ *
+ * ── What rejectUnauthorized: false costs, stated plainly ──
+ *
+ * The connection is encrypted. It is NOT authenticated: a party who
+ * can intercept the route could present their own certificate. That
+ * is the standard posture for every Supabase client guide, and it is
+ * genuinely weaker than verifying.
+ *
+ * To do it properly, download the provider's CA bundle and set
+ * `ssl: { ca: fs.readFileSync(...) }` instead. Worth doing before
+ * this carries real customer addresses over a network you do not own.
+ *
+ * Localhost keeps plain TCP: a container on the same machine has no
+ * route to intercept, and requiring TLS there would mean generating
+ * certificates for every developer.
+ */
+function sslFor(url: string): pg.PoolConfig["ssl"] {
+  const local = /@(localhost|127\.0\.0\.1|\[::1\]|host\.docker\.internal)[:/]/.test(url);
+  return local ? undefined : { rejectUnauthorized: false };
+}
+
+const CONNECTION = connectionString();
+
 export const pool: pg.Pool =
   globalForPg._logisticsPool ??
   new pg.Pool({
-    connectionString: connectionString(),
+    connectionString: CONNECTION,
+    ssl: sslFor(CONNECTION),
     max: Number(process.env.PG_POOL_MAX ?? 8),
     idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 10_000,
+    // 10s was fine for a container on this machine and is not enough
+    // for a managed database across a slow link — Supabase's direct
+    // (IPv6-only) host took 22s to establish from here. Configurable
+    // because the right number is a property of the network, not of
+    // this code.
+    connectionTimeoutMillis: Number(process.env.PG_CONNECT_TIMEOUT_MS ?? 30_000),
   });
 
 // A pool that has ever had an idle client dropped emits 'error' on

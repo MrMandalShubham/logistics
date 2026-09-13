@@ -8,9 +8,9 @@
 // every row to every caller. This turns that into a red build.
 
 import pg from "pg";
-import { CONNECTION } from "./db-config.mjs";
+import { CONNECTION, PG } from "./db-config.mjs";
 
-const client = new pg.Client({ connectionString: CONNECTION });
+const client = new pg.Client({ ...PG });
 await client.connect();
 
 const results = [];
@@ -175,6 +175,29 @@ try {
     }
     check("address requires a geocode and a delivery", refused);
   }
+
+  // ── leave the probe inert ──
+  //
+  // It cannot be deleted, and that is the system working: removing a
+  // delivery cascades into delivery_status_history, which refuses
+  // DELETE by trigger because a timeline you can edit answers
+  // whatever question you like.
+  //
+  // So the probe is CANCELLED instead. It stays in the record, where
+  // it belongs, and never appears in a dispatch queue for somebody to
+  // wonder about. Against a throwaway container this is invisible;
+  // against a real database it is the difference between a footnote
+  // and a delivery nobody placed sitting in the board.
+  try {
+    await client.query(
+      `update delivery.delivery set status = 'CANCELLED'
+        where external_order_id like 'verify-probe-%' and status <> 'CANCELLED'`);
+    await client.query(
+      `update integration.location_ref set is_active = false where code = '__VERIFY__'`);
+  } catch (e) {
+    console.error(`  note: could not retire the probe rows — ${e.message}`);
+  }
+
 } finally {
   await client.end();
 }

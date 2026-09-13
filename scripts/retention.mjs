@@ -28,7 +28,7 @@
 // triggers otherwise untouched and every run itself audited.
 
 import pg from "pg";
-import { CONNECTION } from "./db-config.mjs";
+import { CONNECTION, PG } from "./db-config.mjs";
 
 const args = process.argv.slice(2);
 const has = (f) => args.includes(f);
@@ -41,7 +41,7 @@ const LOCATION_DAYS = num("--location-days", 30);
 const PROOF_DAYS = num("--proof-days", 90);
 const PII_DAYS = num("--pii-days", 180);
 
-const db = new pg.Client({ connectionString: CONNECTION });
+const db = new pg.Client({ ...PG });
 await db.connect();
 
 try {

@@ -15,7 +15,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import pg from "pg";
-import { CONNECTION, MIGRATIONS_DIR } from "./db-config.mjs";
+import { CONNECTION, MIGRATIONS_DIR, PG } from "./db-config.mjs";
 
 const LEDGER = `
   create schema if not exists ops;
@@ -27,7 +27,7 @@ const LEDGER = `
   );
 `;
 
-const client = new pg.Client({ connectionString: CONNECTION });
+const client = new pg.Client({ ...PG });
 await client.connect();
 
 try {

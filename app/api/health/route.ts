@@ -36,7 +36,16 @@ export async function GET(req: NextRequest) {
 
   // Deep health needs a caller who is allowed to see internals: pool
   // sizes and upstream failures are useful to an attacker too.
-  const allowed = await isAllowedDeep(req);
+  let allowed: boolean;
+  try {
+    allowed = await isAllowedDeep(req);
+  } catch (e) {
+    return NextResponse.json(
+      { status: "unavailable", service: "logistics-core",
+        error: { code: "database_unreachable", message: (e as Error).message } },
+      { status: 503, headers: { "X-Api-Version": "v1", "X-Correlation-Id": cid } });
+  }
+
   if (!allowed) {
     return NextResponse.json(
       { error: { code: "forbidden", message: "Deep health requires system:health:deep." } },
@@ -143,8 +152,24 @@ async function isAllowedDeep(req: NextRequest): Promise<boolean> {
     } finally {
       c.release();
     }
-  } catch {
-    // If we cannot check, we do not show internals.
-    return false;
+  } catch (e) {
+    // ── Why this rethrows rather than returning false ──
+    //
+    // It used to swallow everything and return false, so a database
+    // that could not be reached answered "403 Deep health requires
+    // system:health:deep" — the one endpoint whose job is to say what
+    // is wrong, blaming the caller for an outage. It cost real time to
+    // diagnose: a 10-second connect timeout arriving as an auth error.
+    //
+    // A failure to CHECK is not a failure to authorise. The caller
+    // gets 503 and the reason.
+    throw new AuthorisationUnavailable((e as Error)?.message ?? "unknown");
+  }
+}
+
+class AuthorisationUnavailable extends Error {
+  constructor(readonly detail: string) {
+    super(`could not verify the caller: ${detail}`);
+    this.name = "AuthorisationUnavailable";
   }
 }

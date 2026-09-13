@@ -17,7 +17,7 @@
 // scheduler.
 
 import pg from "pg";
-import { CONNECTION } from "./db-config.mjs";
+import { CONNECTION, PG } from "./db-config.mjs";
 import { drainOnce } from "../lib/outbound.ts";
 
 const args = process.argv.slice(2);
@@ -27,7 +27,7 @@ const value = (n, d) => {
   return i >= 0 && args[i + 1] ? Number(args[i + 1]) : d;
 };
 
-const pool = new pg.Pool({ connectionString: CONNECTION, max: 2 });
+const pool = new pg.Pool({ ...PG, max: 2 });
 pool.on("error", (e) => console.error("[outbound] pool error:", e.message));
 
 const SYSTEM = JSON.stringify({

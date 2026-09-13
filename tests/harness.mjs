@@ -1,5 +1,5 @@
 import pg from "pg";
-import { CONNECTION } from "../scripts/db-config.mjs";
+import { CONNECTION, PG } from "../scripts/db-config.mjs";
 
 /**
  * Test harness.
@@ -9,7 +9,7 @@ import { CONNECTION } from "../scripts/db-config.mjs";
  * takes. A test that bypasses RLS proves nothing about production.
  */
 
-export const pool = new pg.Pool({ connectionString: CONNECTION, max: 4 });
+export const pool = new pg.Pool({ ...PG, max: 4 });
 pool.on("error", () => {});
 
 export const SYSTEM = { sub: null, role: "system", actor_kind: "SYSTEM", location_codes: [] };
