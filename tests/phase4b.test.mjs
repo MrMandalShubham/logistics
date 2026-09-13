@@ -354,7 +354,8 @@ describe("sync — offline completion", () => {
     await sync(riderAC, d, "complete", { otp: code });
 
     const { rows } = await raw((db) => db.query(
-      "select event from integration.outbound_event where delivery_id=$1", [d]));
+      `select event from integration.outbound_event
+        where delivery_id=$1 and target='INVENTORY'`, [d]));
     assert.equal(rows[0].event, "inventory.commit");
   });
 

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { pool } from "@/lib/db";
 import { COOKIE_NAME, hashToken } from "@/lib/auth/session";
 import { LABELS } from "@/lib/delivery/states";
+import SignOutButton from "@/app/(rider)/SignOutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -169,6 +170,12 @@ export default async function RiderHome() {
           ))}
         </ul>
       )}
+
+      {/* Q32. Signing out wipes the outbox, which holds customers'
+          addresses and door instructions — on a shared phone that is
+          the last rider's round. It syncs first and refuses to
+          discard unsent work without being told twice. */}
+      <SignOutButton />
     </main>
   );
 }

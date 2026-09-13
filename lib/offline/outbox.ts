@@ -195,3 +195,55 @@ export function pendingFor(events: OutboxEvent[], deliveryId: string): OutboxEve
 export function isAwaitingSync(events: OutboxEvent[], deliveryId: string): boolean {
   return events.some((e) => e.delivery_id === deliveryId);
 }
+
+export type SignOutPlan = {
+  /** Safe to wipe: nothing here that the server has not already seen. */
+  safe: boolean;
+  /** Events that would be destroyed. */
+  unsent: number;
+  /** Deliveries they belong to, for a warning a rider can act on. */
+  deliveries: string[];
+  warning: string | null;
+};
+
+/**
+ * What signing out would cost.
+ *
+ * ── Why sign-out clears the outbox at all ──
+ *
+ * The outbox holds customers' names, addresses and door instructions.
+ * A rider handing a shared phone to the next shift must not hand over
+ * yesterday's delivery round with it. So signing out wipes it.
+ *
+ * ── Why it is not simply `store.clear()` ──
+ *
+ * Wiping unsynced events destroys the only record that a delivery
+ * happened. Phase 4b's whole rule was that an unanswered event stays,
+ * because a dropped event is a parcel nobody can account for. A
+ * sign-out button that silently discards three completed deliveries
+ * would break that rule more thoroughly than any bug, and it would do
+ * it on purpose.
+ *
+ * So the caller syncs first, and if anything survives the sync the
+ * rider is told exactly what they are about to lose and has to say so
+ * again. Their choice, made knowingly — not ours, made quietly.
+ */
+export function planSignOut(events: OutboxEvent[]): SignOutPlan {
+  const unsent = events.length;
+  if (unsent === 0) {
+    return { safe: true, unsent: 0, deliveries: [], warning: null };
+  }
+
+  const deliveries = [...new Set(events.map((e) => e.delivery_id))];
+  const n = `${unsent} update${unsent > 1 ? "s" : ""}`;
+  const d = `${deliveries.length} job${deliveries.length > 1 ? "s" : ""}`;
+
+  return {
+    safe: false,
+    unsent,
+    deliveries,
+    warning:
+      `${n} on ${d} have not reached us yet. Signing out now deletes them ` +
+      "and nobody will know that work was done. Get signal and send them first.",
+  };
+}

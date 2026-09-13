@@ -1,6 +1,7 @@
 import type { PoolClient } from "pg";
 import { logger } from "./logging";
 import { InventoryError, getOrderHold } from "./inventory";
+import { pushStatus } from "./grocery";
 
 /**
  * The outbound queue worker.
@@ -133,14 +134,52 @@ async function commitToInventory(job: Job): Promise<Outcome> {
   }
 }
 
+/**
+ * Tell Grocery where a customer's order has got to.
+ *
+ * ── Why a failure here is quiet, and a commit failure is not ──
+ *
+ * A failed commit means Inventory's ledger disagrees with the world:
+ * stock that left a building was never recorded as sold. That needs a
+ * person.
+ *
+ * A failed status push means an order page is stale. It is worth
+ * retrying, worth showing on the health screen, and worth nobody's
+ * pager. The parcel still arrived. So this returns an outcome and
+ * lets the queue's own schedule handle it, and never raises an
+ * exception against the delivery.
+ */
+async function pushStatusToGrocery(job: Job): Promise<Outcome> {
+  try {
+    const res = await pushStatus(job.payload);
+
+    if (res.ok) return { ok: true, response: res.body };
+
+    return {
+      ok: false,
+      error: `grocery returned ${res.status}: ${JSON.stringify(res.body)}`,
+      response: res.body,
+      fatal: res.fatal,
+    };
+  } catch (e) {
+    const err = e as { message?: string; code?: string };
+    return {
+      ok: false,
+      error: err?.message ?? String(e),
+      // Unconfigured is not a transient fault, but it is one a person
+      // fixes in an env file — so it retries rather than dying, and
+      // the queue drains itself once the variable is set.
+      fatal: false,
+    };
+  }
+}
+
 async function deliverOne(job: Job): Promise<Outcome> {
   if (job.target === "INVENTORY" && job.event === "inventory.commit") {
     return commitToInventory(job);
   }
-  if (job.target === "GROCERY") {
-    // Phase 5. Queued events wait rather than failing, so nothing is
-    // lost when the receiver arrives.
-    return { ok: false, error: "the Grocery receiver arrives in Phase 5" };
+  if (job.target === "GROCERY" && job.event === "delivery.status_changed") {
+    return pushStatusToGrocery(job);
   }
   return { ok: false, error: `no handler for ${job.target}/${job.event}`, fatal: true };
 }
@@ -174,6 +213,16 @@ export async function drainOnce(
       [job.id, outcome.ok, outcome.error ?? null,
        outcome.response ? JSON.stringify(outcome.response) : null,
        outcome.fatal ?? false]);
+
+    // The notification log follows the queue row's fate. Through a
+    // definer function, because ops.notification has a SELECT policy
+    // and no UPDATE policy: a direct write from here would match zero
+    // rows and report success, and a log that silently stops being
+    // written is worse than no log, because it is believed.
+    if (job.target === "GROCERY" && (outcome.ok || state.s === "DEAD")) {
+      await db.query("select ops.record_notification_result($1,$2,$3)",
+        [job.id, outcome.ok, outcome.error ?? null]);
+    }
 
     if (outcome.ok) {
       out.delivered += 1;

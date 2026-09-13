@@ -422,9 +422,12 @@ describe("the commit to Inventory", () => {
   test("delivering enqueues exactly one commit", async () => {
     const { deliveryId, orderId } = await deliver(riderA, riderAC);
 
+    // Scoped to INVENTORY: since Phase 5 a delivery also queues a
+    // status for Grocery, and "exactly one commit" is the claim here.
     const { rows } = await raw((db) => db.query(
       `select target, event, event_key, status, payload
-         from integration.outbound_event where delivery_id=$1`, [deliveryId]));
+         from integration.outbound_event
+        where delivery_id=$1 and target='INVENTORY'`, [deliveryId]));
 
     assert.equal(rows.length, 1);
     assert.equal(rows[0].target, "INVENTORY");
@@ -594,9 +597,17 @@ describe("the commit to Inventory", () => {
         [deliveryId]));
 
     const { rows } = await raw((db) => db.query(
-      "select count(*)::int n from integration.outbound_event where delivery_id=$1",
-      [deliveryId]));
+      `select count(*)::int n from integration.outbound_event
+        where delivery_id=$1 and target='INVENTORY'`, [deliveryId]));
     assert.equal(rows[0].n, 0, "nothing was handed over, so nothing was sold");
+
+    // The customer, on the other hand, is told — a failed delivery is
+    // the one thing they most need to hear about (Phase 5).
+    const { rows: told } = await raw((db) => db.query(
+      `select payload from integration.outbound_event
+        where delivery_id=$1 and target='GROCERY'
+        order by id desc limit 1`, [deliveryId]));
+    assert.equal(told[0].payload.reason_code, "CUSTOMER_UNREACHABLE");
   });
 });
 
