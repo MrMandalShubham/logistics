@@ -20,13 +20,25 @@ import { getLocations, isConfigured } from "../lib/inventory.ts";
  * Fallback coordinates.
  *
  * Lifted from Grocery's src/config/stores.ts, which holds the only
- * geocodes anywhere in this estate. Development seed only -- a real
- * deployment syncs from Inventory and these rows are replaced.
+ * geocodes anywhere in this estate. Development seed only.
+ *
+ * ── Two things wrong with it, kept visible on purpose ──
+ *
+ * SH3 is in this list and is NOT a location Inventory has. Grocery
+ * offers four shops; Inventory has three. That mismatch predates
+ * logistics and is not ours to fix, but seeding a shop that does not
+ * exist would let a developer create deliveries that could never be
+ * fulfilled, so it is marked.
+ *
+ * These land with geo_source = 'SEED', which never overwrites a
+ * geocode an admin set (Phase 8) — a real deployment sets them on
+ * the Locations screen and this list stops mattering.
  */
 const SEED = [
   { code: "HUB", name: "Central Hub",   type: "HUB",   lat: 19.1000, lng: 72.9000 },
   { code: "SH1", name: "Shop 1 Andheri", type: "STORE", lat: 19.1136, lng: 72.8697 },
   { code: "SH2", name: "Shop 2 Bandra",  type: "STORE", lat: 19.0596, lng: 72.8295 },
+  // Not in Inventory. Seeded so Grocery's four-shop UI has a match in dev.
   { code: "SH3", name: "Shop 3 Dadar",   type: "STORE", lat: 19.0178, lng: 72.8478 },
 ];
 
@@ -81,7 +93,10 @@ try {
 
   for (const r of rows) {
     await client.query(
-      "select integration.upsert_location_ref($1,$2,$3,$4,$5,$6,$7)",
+      // sync_location, not upsert_location_ref: names and types come
+      // from Inventory, coordinates do not. Phase 8 made that split
+      // explicit so a sync cannot relabel an admin's geocode.
+      "select integration.sync_location($1,$2,$3,$4,$5,$6,$7)",
       [r.code, r.uuid, r.name, r.type, r.lat, r.lng, source]);
   }
 

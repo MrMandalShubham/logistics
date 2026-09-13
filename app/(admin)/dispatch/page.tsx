@@ -5,6 +5,13 @@ import { COOKIE_NAME, hashToken } from "@/lib/auth/session";
 import { ridersForDispatch, queueForDispatch, inFlight } from "@/lib/fleet/dispatch";
 import { assignDelivery } from "@/app/actions/dispatch";
 
+type RankedRider = {
+  rider_id: string; code: string; display_name: string;
+  distance_km: string | null; position_source: "LIVE" | "HOME" | "NONE";
+  active_count: number; max_concurrent: number;
+  unavailable_reason: string | null; rank: number; why: string;
+};
+
 export const dynamic = "force-dynamic";
 
 /**
@@ -41,8 +48,18 @@ async function load() {
       queueForDispatch(db), ridersForDispatch(db), inFlight(db),
     ]);
 
+    // Phase 8: who SHOULD take each one, and why. Ranking, not
+    // assigning -- the dispatcher still clicks. See §3.2 of the
+    // phase-8 analysis for why automating the click comes later.
+    const ranked: Record<string, RankedRider[]> = {};
+    for (const d of queue as { id: string }[]) {
+      const { rows } = await db.query(
+        "select * from fleet.rank_riders_for($1)", [d.id]);
+      ranked[d.id] = rows as RankedRider[];
+    }
+
     await db.query("commit");
-    return { claims: c.claims, queue, riders, active };
+    return { claims: c.claims, queue, riders, active, ranked };
   } catch {
     await db.query("rollback").catch(() => {});
     return null;
@@ -63,7 +80,7 @@ export default async function DispatchPage() {
     );
   }
 
-  const { claims, queue, riders, active } = data;
+  const { claims, queue, riders, active, ranked } = data;
   const perms = (claims.permissions as string[]) ?? [];
   const mayAssign = perms.includes("deliveries:assign");
   const available = riders.filter((r) => r.unavailable_reason === null);
@@ -125,17 +142,12 @@ export default async function DispatchPage() {
                 </td>
                 <td style={S.td}>
                   {mayAssign && available.length > 0 ? (
-                    <form action={assign} style={S.form}>
-                      <input type="hidden" name="delivery_id" value={String(d.id)} />
-                      <select name="rider_id" style={S.select} defaultValue={available[0].id}>
-                        {available.map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.code} · {r.display_name} ({r.active_count}/{r.max_concurrent})
-                          </option>
-                        ))}
-                      </select>
-                      <button type="submit" style={S.button}>Assign</button>
-                    </form>
+                    <Suggest
+                      deliveryId={String(d.id)}
+                      ranked={ranked[String(d.id)] ?? []}
+                      fallback={available}
+                      assign={assign}
+                    />
                   ) : (
                     <span style={S.muted}>
                       {!mayAssign ? "—" : "no rider available"}
@@ -209,6 +221,73 @@ export default async function DispatchPage() {
   );
 }
 
+/**
+ * The ranked rider picker.
+ *
+ * ── Why the list is ordered and annotated, and still a list ──
+ *
+ * `fleet.rank_riders_for` puts the best candidate first and says why
+ * — distance, load, how long they have been idle. The dispatcher
+ * still chooses, because a scoring function nobody has watched make
+ * a decision is not one to hand the wheel to, and because the person
+ * on the board knows things the database does not: who is about to
+ * finish a shift, whose bike is playing up, who asked for the far
+ * side of town.
+ *
+ * When ranking cannot help — no shop coordinates yet — it falls back
+ * to the old unordered list rather than showing nothing. A missing
+ * geocode should degrade dispatch, not break it.
+ */
+function Suggest({
+  deliveryId, ranked, fallback, assign,
+}: {
+  deliveryId: string;
+  ranked: RankedRider[];
+  fallback: { id: string; code: string; display_name: string;
+              active_count: number; max_concurrent: number }[];
+  assign: (fd: FormData) => Promise<void>;
+}) {
+  const usable = ranked.filter((r) => r.unavailable_reason === null);
+  const best = usable[0];
+
+  return (
+    <form action={assign} style={S.form}>
+      <input type="hidden" name="delivery_id" value={deliveryId} />
+
+      {usable.length > 0 ? (
+        <>
+          <select name="rider_id" style={S.select} defaultValue={best.rider_id}>
+            {usable.map((r) => (
+              <option key={r.rider_id} value={r.rider_id}>
+                {r.rank === 1 ? "★ " : ""}{r.code} · {r.display_name}
+                {r.distance_km !== null ? ` · ${r.distance_km} km` : ""}
+                {` (${r.active_count}/${r.max_concurrent})`}
+              </option>
+            ))}
+          </select>
+          <button type="submit" style={S.button}>Assign</button>
+          <span style={S.why}>{best.why}</span>
+        </>
+      ) : (
+        <>
+          <select name="rider_id" style={S.select} defaultValue={fallback[0]?.id}>
+            {fallback.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.code} · {r.display_name} ({r.active_count}/{r.max_concurrent})
+              </option>
+            ))}
+          </select>
+          <button type="submit" style={S.button}>Assign</button>
+          <span style={S.why}>
+            Not ranked — <Link href="/locations" style={S.link}>set this shop&rsquo;s
+            coordinates</Link> to sort by distance.
+          </span>
+        </>
+      )}
+    </form>
+  );
+}
+
 function Stat({ n, label }: { n: number; label: string }) {
   return (
     <div style={S.stat}>
@@ -219,6 +298,7 @@ function Stat({ n, label }: { n: number; label: string }) {
 }
 
 const S: Record<string, React.CSSProperties> = {
+  why: { flexBasis: "100%", color: "#888", fontSize: 12, marginTop: 4 },
   page: { maxWidth: 1200, margin: "40px auto", padding: "0 24px", lineHeight: 1.5 },
   head: { display: "flex", justifyContent: "space-between", alignItems: "baseline",
           borderBottom: "1px solid #ddd", paddingBottom: 12, marginBottom: 20 },
