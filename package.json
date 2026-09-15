@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "next dev --port 3200",
     "build": "next build",
-    "start": "next start --port 3200",
+    "start": "next start",
     "typecheck": "tsc --noEmit",
     "db:up": "node scripts/db-up.mjs",
     "db:down": "node scripts/db-down.mjs",
@@ -25,21 +25,22 @@
     "live:phase5": "tsx --env-file=.env scripts/live-phase5.mjs",
     "grocery:stub": "node scripts/grocery-stub.mjs",
     "live:phase6": "tsx --env-file=.env scripts/live-phase6.mjs",
-    "worker": "tsx --env-file=.env scripts/worker.mjs",
-    "retention": "tsx --env-file=.env scripts/retention.mjs",
-    "live:phase8": "tsx --env-file=.env scripts/live-phase8.mjs"
+    "worker": "tsx scripts/worker.mjs",
+    "retention": "tsx scripts/retention.mjs",
+    "live:phase8": "tsx --env-file=.env scripts/live-phase8.mjs",
+    "start:local": "next start --port 3200"
   },
   "dependencies": {
     "next": "^16.3.3",
     "pg": "^8.13.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "tsx": "^4.19.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/pg": "^8.11.10",
     "@types/react": "^19.2.18",
-    "typescript": "^5.7.2",
-    "tsx": "^4.19.2"
+    "typescript": "^5.7.2"
   }
 }
